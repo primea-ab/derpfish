@@ -22,7 +22,7 @@ const BLACK = 16
 func main() {
 	fmt.Println("Starting Derpfish")
 	board := createNewBoard()
-	board = createBoardFromFen("r1b1k1nr/p2p1pNp/n2B4/1p1NP2P/6P1/3P1Q2/P1P1K3/q5b1") // REPLACE STARTER BOARD FOR TESTING
+	board = createBoardFromFen("r1b1k1nr/p2p1pNp/n2B4/1p1NP3/8/2QP1Q2/P1P1K3/q5R1") // REPLACE STARTER BOARD FOR TESTING
 	startGame(board)
 }
 
@@ -61,10 +61,10 @@ func getAllowedMoves(currentPlayer int, board *[64]int, fromSquare string) []int
 		return []int{}
 	}
 
-	return getMovementForPiece(board, square, uncoloredPiece)
+	return getMovementForPiece(board, square, uncoloredPiece, currentPlayer)
 }
 
-func getMovementForPiece(board *[64]int, square int, piece int) []int {
+func getMovementForPiece(board *[64]int, square int, piece int, side int) []int {
 	switch piece {
 	case PAWN:
 		return getPawnMovement(board, square)
@@ -73,12 +73,11 @@ func getMovementForPiece(board *[64]int, square int, piece int) []int {
 	case KNIGHT:
 		return getKnightMovement(board, square)
 	case BISHOP:
-		fmt.Println("I AM BISH")
-		return getPossibleLinearMovement(board, square, []int{7, 9, -7, -9})
+		return getPossibleLinearMovement(board, square, []int{7, 9, -7, -9}, side)
 	case ROOK:
-		return getPossibleLinearMovement(board, square, []int{1, 8, -1, -8})
+		return getPossibleLinearMovement(board, square, []int{1, 8, -1, -8}, side)
 	case QUEEN:
-		return getPossibleLinearMovement(board, square, []int{7, 9, -7, -9, 1, 8, -1, -8})
+		return getPossibleLinearMovement(board, square, []int{7, 9, -7, -9, 1, 8, -1, -8}, side)
 	default:
 		return []int{}
 	}
@@ -96,17 +95,29 @@ func getKnightMovement(board *[64]int, square int) []int {
 	return []int{}
 }
 
-func getPossibleLinearMovement(board *[64]int, square int, directions []int) []int {
+func getPossibleLinearMovement(board *[64]int, square int, directions []int, side int) []int {
 	var possibleMoves []int
 	for _, d := range directions {
 		checkedSquare := square + d
 		for {
-			fmt.Println("SQUARE")
-			fmt.Println(checkedSquare)
-			if (checkedSquare) < 0 || (checkedSquare) >= 64 || board[checkedSquare] != NONE {
+			if checkedSquare < 0 || checkedSquare >= 64 {
 				break
 			}
-			possibleMoves = append(possibleMoves, checkedSquare)
+
+			if board[checkedSquare] != NONE {
+				if board[checkedSquare] & side < side {
+					possibleMoves = append(possibleMoves, checkedSquare)
+				}
+				break
+			}
+
+			if board[checkedSquare] == NONE {
+				possibleMoves = append(possibleMoves, checkedSquare)
+			}
+			// If we are at a edge and continue in that direction out of board
+			if (d < 8 && checkedSquare % 8 == 0) || (d > -8 && checkedSquare % 8 == 7) {
+				break
+			}
 			checkedSquare += d
 		}
 	}
