@@ -22,7 +22,7 @@ const BLACK = 16
 func main() {
 	fmt.Println("Starting Derpfish")
 	board := createNewBoard()
-	board = createBoardFromFen("r1b1k1nr/p2p1pNp/n2B4/1p1NP3/8/2QP1Q2/P1P1K3/q5R1") // REPLACE STARTER BOARD FOR TESTING
+	board = createBoardFromFen("r1b1k1nr/p2p2Np/n2B4/1p1NPp2/8/2PP1Q2/P1P1K3/q5R1") // REPLACE STARTER BOARD FOR TESTING
 	startGame(board)
 }
 
@@ -32,7 +32,7 @@ func startGame(board *[64]int) {
 	for {
 		displayBoard(currentPlayer, board, []int{})
 		fromSquare := getCommand("From ", reader)
-		allowedMoves := getAllowedMoves(currentPlayer, board, fromSquare)
+		allowedMoves := getAllowedMoves(currentPlayer, board, fromSquare, 37)
 		fmt.Println(allowedMoves)
 		displayBoard(currentPlayer, board, allowedMoves)
 		toSquare := getCommand(fromSquare + " -> ? ", reader)
@@ -50,7 +50,7 @@ func createNewBoard() *[64]int {
 	return createBoardFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 }
 
-func getAllowedMoves(currentPlayer int, board *[64]int, fromSquare string) []int {
+func getAllowedMoves(currentPlayer int, board *[64]int, fromSquare string, enpassant int) []int {
 	position := []rune(fromSquare)
 	file := position[0]-97
 	rank := position[1]-49
@@ -61,30 +61,51 @@ func getAllowedMoves(currentPlayer int, board *[64]int, fromSquare string) []int
 		return []int{}
 	}
 
-	return getMovementForPiece(board, square, uncoloredPiece, currentPlayer)
+	return getMovementForPiece(board, square, uncoloredPiece, currentPlayer, enpassant)
 }
 
-func getMovementForPiece(board *[64]int, square int, piece int, side int) []int {
+func getMovementForPiece(board *[64]int, square int, piece int, side int, enpassant int) []int {
 	switch piece {
 	case PAWN:
-		return getPawnMovement(board, square)
+		return getPawnMovement(board, square, side, enpassant)
 	case KING:
 		return getKingMovement(board, square)
 	case KNIGHT:
 		return getKnightMovement(board, square)
 	case BISHOP:
-		return getPossibleLinearMovement(board, square, []int{7, 9, -7, -9}, side)
+		return getLinearMovement(board, square, []int{7, 9, -7, -9}, side)
 	case ROOK:
-		return getPossibleLinearMovement(board, square, []int{1, 8, -1, -8}, side)
+		return getLinearMovement(board, square, []int{1, 8, -1, -8}, side)
 	case QUEEN:
-		return getPossibleLinearMovement(board, square, []int{7, 9, -7, -9, 1, 8, -1, -8}, side)
+		return getLinearMovement(board, square, []int{7, 9, -7, -9, 1, 8, -1, -8}, side)
 	default:
 		return []int{}
 	}
 }
 
-func getPawnMovement(board *[64]int, square int) []int {
-	return []int{}
+func getPawnMovement(board *[64]int, square int, side int, enpassant int) []int {
+	var possibleMoves []int
+	if side == WHITE {
+		if board[square + 8] == NONE {
+			possibleMoves = append(possibleMoves, square + 8)
+		}
+		if square / 8 == 1 && board[square + 16] == NONE {
+			possibleMoves = append(possibleMoves, square + 16)
+		} else if square - 1 == enpassant || square + 1 == enpassant {
+			possibleMoves = append(possibleMoves, enpassant + 8)
+		}
+		//if board[square + 7]
+	} else {
+		if board[square - 8] == NONE {
+			possibleMoves = append(possibleMoves, square - 8)
+		}
+		if square / 8 == 6 && board[square - 16] == NONE{
+			possibleMoves = append(possibleMoves, square - 16)
+		} else if square - 1 == enpassant || square + 1 == enpassant {
+			possibleMoves = append(possibleMoves, enpassant - 8)
+		}
+	}
+	return possibleMoves
 }
 
 func getKingMovement(board *[64]int, square int) []int {
@@ -95,7 +116,7 @@ func getKnightMovement(board *[64]int, square int) []int {
 	return []int{}
 }
 
-func getPossibleLinearMovement(board *[64]int, square int, directions []int, side int) []int {
+func getLinearMovement(board *[64]int, square int, directions []int, side int) []int {
 	var possibleMoves []int
 	for _, d := range directions {
 		checkedSquare := square + d
