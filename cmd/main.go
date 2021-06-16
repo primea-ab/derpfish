@@ -22,13 +22,13 @@ const BLACK = 16
 func main() {
 	fmt.Println("Starting Derpfish")
 	board := createNewBoard()
-	board = createBoardFromFen("r1b1k1nr/p2p2Np/n2B4/1p1NPp2/8/2PP1Q2/P1P1K3/q5R1") // REPLACE STARTER BOARD FOR TESTING
+	board = createBoardFromFen("r1b1k1nr/p2p2Np/n2B4/1p1NPp2/p1p5/2PP1Q2/P1P1K2p/q5R1") // REPLACE STARTER BOARD FOR TESTING
 	startGame(board)
 }
 
 func startGame(board *[64]int) {
 	reader := bufio.NewReader(os.Stdin)
-	currentPlayer := WHITE
+	currentPlayer := BLACK
 	for {
 		displayBoard(currentPlayer, board, []int{})
 		fromSquare := getCommand("From ", reader)
@@ -89,23 +89,38 @@ func getPawnMovement(board *[64]int, square int, side int, enpassant int) []int 
 		if board[square + 8] == NONE {
 			possibleMoves = append(possibleMoves, square + 8)
 		}
-		if square / 8 == 1 && board[square + 16] == NONE {
+		if square / 8 == 1 && board[square + 8] == NONE && board[square + 16] == NONE {
 			possibleMoves = append(possibleMoves, square + 16)
 		} else if square - 1 == enpassant || square + 1 == enpassant {
 			possibleMoves = append(possibleMoves, enpassant + 8)
 		}
-		//if board[square + 7]
+		if square % 8 != 0 && isOpponentPiece(side, board[square + 7]) {
+			possibleMoves = append(possibleMoves, square + 7)
+		}
+		if square % 8 != 7 && isOpponentPiece(side, board[square + 9]) {
+			possibleMoves = append(possibleMoves, square + 9)
+		}
 	} else {
 		if board[square - 8] == NONE {
 			possibleMoves = append(possibleMoves, square - 8)
 		}
-		if square / 8 == 6 && board[square - 16] == NONE{
+		if square / 8 == 6 && board[square - 8] == NONE && board[square - 16] == NONE {
 			possibleMoves = append(possibleMoves, square - 16)
 		} else if square - 1 == enpassant || square + 1 == enpassant {
 			possibleMoves = append(possibleMoves, enpassant - 8)
 		}
+		if square % 8 != 7 && isOpponentPiece(side, board[square - 7]) {
+			possibleMoves = append(possibleMoves, square - 7)
+		}
+		if square % 8 != 0 && isOpponentPiece(side, board[square - 9]) {
+			possibleMoves = append(possibleMoves, square - 9)
+		}
 	}
 	return possibleMoves
+}
+
+func isOpponentPiece(side int, piece int) bool {
+	return piece > 0 && piece & side == 0
 }
 
 func getKingMovement(board *[64]int, square int) []int {
