@@ -22,13 +22,13 @@ const BLACK = 16
 func main() {
 	fmt.Println("Starting Derpfish")
 	board := createNewBoard()
-	board = createBoardFromFen("r1b1k1nr/p2p2Np/n2B4/1p1NPp2/p1p5/2PP1Q2/P1P1K2p/q5R1") // REPLACE STARTER BOARD FOR TESTING
+	board = createBoardFromFen("Q1b1k1nr/p2p2Np/n2B4/1p1NPp2/p1p5/2PP1Q2/P1P1K2p/q5R1") // REPLACE STARTER BOARD FOR TESTING
 	startGame(board)
 }
 
 func startGame(board *[64]int) {
 	reader := bufio.NewReader(os.Stdin)
-	currentPlayer := BLACK
+	currentPlayer := WHITE
 	for {
 		displayBoard(currentPlayer, board, []int{})
 		fromSquare := getCommand("From ", reader)
@@ -47,7 +47,7 @@ func getCommand(inputtext string, reader *bufio.Reader) string {
 }
 
 func createNewBoard() *[64]int {
-	return createBoardFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+	return createBoardFromFen("Qnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 }
 
 func getAllowedMoves(currentPlayer int, board *[64]int, fromSquare string, enpassant int) []int {
@@ -133,7 +133,12 @@ func getKnightMovement(board *[64]int, square int) []int {
 
 func getLinearMovement(board *[64]int, square int, directions []int, side int) []int {
 	var possibleMoves []int
+
 	for _, d := range directions {
+		// If we are at a edge and continue in that direction out of board
+		if (square % 8 == 0 && (d == -1 || d == -9 || d == 7)) || (square % 8 == 7 && (d == 1 || d == 9 || d == -7)) {
+			continue
+		}
 		checkedSquare := square + d
 		for {
 			if checkedSquare < 0 || checkedSquare >= 64 {
@@ -141,7 +146,7 @@ func getLinearMovement(board *[64]int, square int, directions []int, side int) [
 			}
 
 			if board[checkedSquare] != NONE {
-				if board[checkedSquare] & side < side {
+				if board[checkedSquare] & side == 0 {
 					possibleMoves = append(possibleMoves, checkedSquare)
 				}
 				break
