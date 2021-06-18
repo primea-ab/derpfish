@@ -22,7 +22,7 @@ const BLACK = 16
 func main() {
 	fmt.Println("Starting Derpfish")
 	board := createNewBoard()
-	board = createBoardFromFen("Q1b1k1nr/p2p2Np/n2B4/1p1NPp2/p1p5/2PP1Q2/P1P1K2p/q5R1") // REPLACE STARTER BOARD FOR TESTING
+	board = createBoardFromFen("QKb1k1nr/p2p2Np/n2B4/1p1NPp2/p1p5/2PP1Q2/P1P1K2p/q5R1") // REPLACE STARTER BOARD FOR TESTING
 	startGame(board)
 }
 
@@ -69,7 +69,7 @@ func getMovementForPiece(board *[64]int, square int, piece int, side int, enpass
 	case PAWN:
 		return getPawnMovement(board, square, side, enpassant)
 	case KING:
-		return getKingMovement(board, square)
+		return getKingMovement(board, square, side, false, false)
 	case KNIGHT:
 		return getKnightMovement(board, square)
 	case BISHOP:
@@ -123,8 +123,30 @@ func isOpponentPiece(side int, piece int) bool {
 	return piece > 0 && piece & side == 0
 }
 
-func getKingMovement(board *[64]int, square int) []int {
-	return []int{}
+func isNotFriendly(side int, piece int) bool {
+	return piece & side == 0
+}
+
+// TODO: Implement castling
+// TODO: Implement forbidding moves when ending up in check
+func getKingMovement(board *[64]int, square int, side int, queenSideCastle bool, kingSideCastle bool) []int {
+	var possibleMoves []int
+	directions := [8]int{7, 8, 9, 1, -7, -8, -9, -1}
+	for _, d := range directions {
+		// If we are at a edge and continue in that direction out of board
+		if (square % 8 == 0 && (d == -1 || d == -9 || d == 7)) || (square % 8 == 7 && (d == 1 || d == 9 || d == -7)) {
+			continue
+		}
+		checkedSquare := square + d
+		if checkedSquare < 0 || checkedSquare >= 64 {
+			continue
+		}
+
+		if isNotFriendly(side, board[checkedSquare]) {
+			possibleMoves = append(possibleMoves, checkedSquare)
+		}
+	}
+	return possibleMoves
 }
 
 func getKnightMovement(board *[64]int, square int) []int {
